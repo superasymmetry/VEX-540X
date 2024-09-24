@@ -1,4 +1,6 @@
 #include "main.h"
+#include <stdlib.h>
+#include <iostream>
 
 // using namespace pros;
 
@@ -8,6 +10,21 @@
  * When this callback is fired, it will toggle line 2 of the LCD text between
  * "I was pressed!" and nothing.
  */
+using namespace std;
+
+int main()
+{
+    // Set up callbacks for autonomous and driver control periods.
+    autonomous();
+    opcontrol();
+
+    // Prevent main from exiting with an infinite loop.
+    while (true)
+    {
+        system("PAUSE");
+    }
+}
+
 void on_center_button() {
 	static bool pressed = false;
 	pressed = !pressed;
@@ -16,6 +33,7 @@ void on_center_button() {
 	} else {
 		pros::lcd::clear_line(2);
 	}
+	opcontrol();
 }
 
 /**
@@ -33,7 +51,8 @@ void initialize() {
 	// pros::ADIAnalogIn sensor (ANALOG_SENSOR_PORT);
   	// sensor.calibrate();
 
-	pros::Motor drive_left_initializer (MOTOR_PORT, E_MOTOR_GEARSET_18, true, E_MOTOR_ENCODER_DEGREES);
+	// pros::Motor drive_left_initializer (MOTOR_PORT, E_MOTOR_GEARSET_18, true, E_MOTOR_ENCODER_DEGREES);
+
 }
 
 /**
@@ -96,6 +115,7 @@ void opcontrol() {
 		// Arcade control scheme
 		int dir = master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
 		int turn = master.get_analog(ANALOG_LEFT_X);  // Gets the turn left/right from right joystick
+		pros::lcd::set_text(3, "Turn: " + std::to_string(turn) + " Dir: " + std::to_string(dir));
 		left_mg.move(dir - turn);                      // Sets left motor voltage
 		right_mg.move(dir + turn);                     // Sets right motor voltage
 		pros::delay(20);                               // Run for 20 ms then update
