@@ -52,7 +52,7 @@ void initialize() {
   	// sensor.calibrate();
 
 	// pros::Motor drive_left_initializer (MOTOR_PORT, E_MOTOR_GEARSET_18, true, E_MOTOR_ENCODER_DEGREES);
-
+	opcontrol();
 }
 
 /**
