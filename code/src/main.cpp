@@ -85,7 +85,11 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
+	pros::Motor left_wheels (LEFT_WHEELS_PORT);
+	pros::Motor right_wheels (RIGHT_WHEELS_PORT, true); // This reverses the motor
 
+  	right_wheels.move_relative(1000, MOTOR_MAX_SPEED);
+  	left_wheels.move_relative(1000, MOTOR_MAX_SPEED);	
 
 }
 
