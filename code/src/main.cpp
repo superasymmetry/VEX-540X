@@ -10,20 +10,7 @@
  * When this callback is fired, it will toggle line 2 of the LCD text between
  * "I was pressed!" and nothing.
  */
-using namespace std;
 
-int main()
-{
-    // Set up callbacks for autonomous and driver control periods.
-    autonomous();
-    opcontrol();
-
-    // Prevent main from exiting with an infinite loop.
-    while (true)
-    {
-        system("PAUSE");
-    }
-}
 
 void on_center_button() {
 	static bool pressed = false;
@@ -33,7 +20,6 @@ void on_center_button() {
 	} else {
 		pros::lcd::clear_line(2);
 	}
-	opcontrol();
 }
 
 /**
@@ -48,6 +34,7 @@ void initialize() {
 
 	pros::lcd::register_btn1_cb(on_center_button);
 
+	autonomous();
 	// pros::ADIAnalogIn sensor (ANALOG_SENSOR_PORT);
   	// sensor.calibrate();
 
@@ -84,7 +71,21 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
-	
+	int MOTOR_MAX_SPEED = 100;
+
+	pros::lcd::set_text(5, "Entering autonomous");
+
+	pros::MotorGroup left_mg({1, 2, -8});   
+	pros::MotorGroup right_mg({4, 5, -7});
+
+	right_mg.move(500);
+	left_mg.move(500);
+	pros::delay(20);
+
+	right_mg.move(500);
+	pros::delay(20);
+	right_mg.move(500);
+	left_mg.move(500);
 
 }
 
@@ -104,7 +105,7 @@ void autonomous() {
 void opcontrol() {
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
 	pros::MotorGroup left_mg({1, 2, -8});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
-	pros::MotorGroup right_mg({4, 5, -7});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+	pros::MotorGroup right_mg({-4, -5, 7});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
 
 	while (true) {
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
@@ -112,8 +113,8 @@ void opcontrol() {
 		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);  // Prints status of the emulated screen LCDs
 
 		// Arcade control scheme
-		int dir = master.get_analog(ANALOG_LEFT_X);    // Gets amount forward/backward from left joystick
-		int turn = master.get_analog(ANALOG_LEFT_Y);  // Gets the turn left/right from right joystick
+		int dir = master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
+		int turn = master.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		pros::lcd::set_text(3, "Turn: " + std::to_string(turn) + " Dir: " + std::to_string(dir));
 		left_mg.move(dir - turn);                      // Sets left motor voltage
 		right_mg.move(dir + turn);                     // Sets right motor voltage
