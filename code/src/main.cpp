@@ -2,14 +2,32 @@
 #include <stdlib.h>
 #include <iostream>
 
-// using namespace pros;
+void move_forward(int distance, int speed) {
+    left_mg.move_relative(distance, speed);
+    right_mg.move_relative(distance, speed);
+    pros::delay(2000);  // Wait for the movement to complete
+}
 
-/**
- * A callback function for LLEMU's center button.
- *
- * When this callback is fired, it will toggle line 2 of the LCD text between
- * "I was pressed!" and nothing.
- */
+void turn_robot(int angle) {
+    int turn_distance = angle * 10; // Adjust the multiplier based on how much turning is needed
+    left_mg.move(turn_distance);
+    right_mg.move(-turn_distance);
+    pros::delay(1000);
+}
+
+// Function to grab the stake
+void grab_stake() {
+    grabber_motor.move_velocity(100);  // Close the grabber motor to grab the stake
+    pros::delay(GRAB_TIME);            // Wait for grabber to close
+    grabber_motor.move_velocity(0);    // Stop the grabber motor
+}
+
+// Function to release the stake
+void release_stake() {
+    grabber_motor.move_velocity(-100);  // Open the grabber to release the stake
+    pros::delay(GRAB_TIME);             // Wait for grabber to open
+    grabber_motor.move_velocity(0);     // Stop the grabber motor
+}
 
 
 void on_center_button() {
@@ -76,16 +94,16 @@ void autonomous() {
 	pros::lcd::set_text(5, "Entering autonomous");
 
 	pros::MotorGroup left_mg({1, 2, -8});   
-	pros::MotorGroup right_mg({4, 5, -7});
+	pros::MotorGroup right_mg({-4, -5, 7});
 
-	right_mg.move(500);
-	left_mg.move(500);
-	pros::delay(20);
+	right_mg.move(50000);
+	left_mg.move(50000);
+	pros::delay(2000);
 
-	right_mg.move(500);
-	pros::delay(20);
-	right_mg.move(500);
-	left_mg.move(500);
+	right_mg.move(5000);
+	pros::delay(2000);
+	right_mg.move(5000);
+	left_mg.move(5000);
 
 }
 
