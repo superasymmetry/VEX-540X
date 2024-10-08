@@ -1,6 +1,27 @@
 #include "main.h"
 #include <stdlib.h>
 #include <iostream>
+#include "lemlib/api.hpp"
+#include "lemlib/chassis/chassis.hpp"
+#include "lemlib/pose.hpp"
+#include "pros/motors.hpp"
+#include "pros/imu.hpp"
+#include "lemlib/chassis/trackingWheel.hpp"
+#include "lemlib/pose.hpp"
+
+pros::Controller master(pros::E_CONTROLLER_MASTER);
+pros::MotorGroup left_mg({1, 2, -8}, pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+pros::MotorGroup right_mg({-4, -5, 7}, pros::MotorGearset::blue);  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+pros::ADIDigitalOut grabber_motor(1, false);
+
+
+lemlib::Drivetrain drivetrain(&left_mg,
+                              &right_mg,
+                              10,
+                              lemlib::Omniwheel::NEW_4, // using new 4" omnis
+                              360, // drivetrain rpm is 360
+                              2 // horizontal drift is 2 (for now)
+);
 
 void move_forward(int distance, int speed) {
     left_mg.move_relative(distance, speed);
@@ -17,16 +38,14 @@ void turn_robot(int angle) {
 
 // Function to grab the stake
 void grab_stake() {
-    grabber_motor.move_velocity(100);  // Close the grabber motor to grab the stake
-    pros::delay(GRAB_TIME);            // Wait for grabber to close
-    grabber_motor.move_velocity(0);    // Stop the grabber motor
+    grabber_motor.set_value(true);
+    pros::delay(1000);
 }
 
 // Function to release the stake
 void release_stake() {
-    grabber_motor.move_velocity(-100);  // Open the grabber to release the stake
-    pros::delay(GRAB_TIME);             // Wait for grabber to open
-    grabber_motor.move_velocity(0);     // Stop the grabber motor
+    grabber_motor.set_value(false);
+    pros::delay(1000);
 }
 
 
@@ -96,14 +115,20 @@ void autonomous() {
 	pros::MotorGroup left_mg({1, 2, -8});   
 	pros::MotorGroup right_mg({-4, -5, 7});
 
-	right_mg.move(50000);
-	left_mg.move(50000);
-	pros::delay(2000);
+	// right_mg.move(50000);
+	// left_mg.move(50000);
+	// pros::delay(2000);
 
-	right_mg.move(5000);
-	pros::delay(2000);
-	right_mg.move(5000);
-	left_mg.move(5000);
+	// right_mg.move(5000);
+	// pros::delay(2000);
+	// right_mg.move(5000);
+	// left_mg.move(5000);
+
+	for(int i=0;i<7;i++){
+		move_forward(5000, 100);
+		pros::delay(20);
+	}
+
 
 }
 
@@ -121,10 +146,6 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup left_mg({1, 2, -8});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
-	pros::MotorGroup right_mg({-4, -5, 7});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
-
 	while (true) {
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
 		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
