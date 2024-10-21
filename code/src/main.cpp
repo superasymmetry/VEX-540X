@@ -62,7 +62,7 @@ lemlib::Chassis chassis(drivetrain, // drivetrain settings
 );
 
 void move_forward(int distance, int speed) {
-	distance *= 200;
+	distance *= 5;
     left_mg.move_relative(distance, speed);
     right_mg.move_relative(distance, speed);
     pros::delay((distance / abs(speed)) * 1000);
@@ -78,7 +78,7 @@ void turn_robot(int angle) {
 void grab_stake() {
 	grab = !grab;
 	grabber_motor.set_value(grab);
-	pros::delay(20);
+	pros::delay(40);
 }
 
 void on_center_button() {
@@ -162,7 +162,7 @@ void autonomous() {
 
 	move_forward(80, 400);
 	turn_robot(-3);
-	move_forward(30, 200);
+	move_forward(30, 400);
 	grab_stake();
 	turn_robot(3);
 	// grab_stake();
