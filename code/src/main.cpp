@@ -78,6 +78,7 @@ void turn_robot(int angle) {
 void grab_stake() {
 	grab = !grab;
 	grabber_motor.set_value(grab);
+	pros::delay(20);
 }
 
 void on_center_button() {
@@ -160,12 +161,10 @@ void autonomous() {
 	// chassis.moveToPoint(0, 48, 10000);
 
 	move_forward(80, 400);
-	turn_robot(3);
+	turn_robot(-3);
 	move_forward(30, 200);
 	grab_stake();
-	// pros::delay(5);
-	// turn_robot(60);
-	// pros::delay(5);
+	turn_robot(3);
 	// grab_stake();
 	// pros::delay(10);
 	// turn_robot(107);
@@ -196,7 +195,7 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-	
+
 	while (true) {
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
 		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
