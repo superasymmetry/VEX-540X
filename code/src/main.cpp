@@ -12,8 +12,9 @@
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 pros::MotorGroup left_mg({1, 2, -8}, pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
 pros::MotorGroup right_mg({-4, -5, 7}, pros::MotorGearset::blue);  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
-pros::ADIDigitalOut grabber_motor(1, false);
-
+pros::Motor intake(16, pros::MotorGearset::blue);    
+bool grab = false;
+pros::ADIDigitalOut grabber_motor('A', grab);
 
 lemlib::Drivetrain drivetrain(&left_mg,
                               &right_mg,
@@ -23,31 +24,61 @@ lemlib::Drivetrain drivetrain(&left_mg,
                               2 // horizontal drift is 2 (for now)
 );
 
+lemlib::OdomSensors sensors(nullptr, // vertical tracking wheel 1, set to null
+                            nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
+                            nullptr, // horizontal tracking wheel 1
+                            nullptr, // horizontal tracking wheel 2, set to nullptr as we don't have a second one
+                            nullptr // inertial sensor
+);
+
+// lateral PID controller
+lemlib::ControllerSettings lateral_controller(10, // proportional gain (kP)
+                                              0, // integral gain (kI)
+                                              3, // derivative gain (kD)
+                                              3, // anti windup
+                                              1, // small error range, in inches
+                                              100, // small error range timeout, in milliseconds
+                                              3, // large error range, in inches
+                                              500, // large error range timeout, in milliseconds
+                                              20 // maximum acceleration (slew)
+);
+
+// angular PID controller
+lemlib::ControllerSettings angular_controller(2, // proportional gain (kP)
+                                              0, // integral gain (kI)
+                                              10, // derivative gain (kD)
+                                              3, // anti windup
+                                              1, // small error range, in degrees
+                                              100, // small error range timeout, in milliseconds
+                                              3, // large error range, in degrees
+                                              500, // large error range timeout, in milliseconds
+                                              0 // maximum acceleration (slew)
+);
+
+lemlib::Chassis chassis(drivetrain, // drivetrain settings
+                        lateral_controller, // lateral PID settings
+                        angular_controller, // angular PID settings
+                        sensors // odometry sensors
+);
+
 void move_forward(int distance, int speed) {
+	distance *= 200;
     left_mg.move_relative(distance, speed);
     right_mg.move_relative(distance, speed);
-    pros::delay(2000);  // Wait for the movement to complete
+    pros::delay((distance / abs(speed)) * 1000);
 }
 
 void turn_robot(int angle) {
-    int turn_distance = angle * 10; // Adjust the multiplier based on how much turning is needed
+    int turn_distance = angle * 10;
     left_mg.move(turn_distance);
     right_mg.move(-turn_distance);
     pros::delay(1000);
 }
 
-// Function to grab the stake
 void grab_stake() {
-    grabber_motor.set_value(true);
-    pros::delay(1000);
+	grab = !grab;
+	grabber_motor.set_value(grab);
 }
-
-// Function to release the stake
-void release_stake() {
-    grabber_motor.set_value(false);
-    pros::delay(1000);
-}
-
 
 void on_center_button() {
 	static bool pressed = false;
@@ -67,9 +98,20 @@ void on_center_button() {
  */
 void initialize() {
 	pros::lcd::initialize();
+	chassis.calibrate();
 	pros::lcd::set_text(1, "Hello PROS User!");
 
 	pros::lcd::register_btn1_cb(on_center_button);
+	pros::Task screen_task([&]() {
+        while (true) {
+            // print robot location to the brain screen
+            pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
+            pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
+            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+            // delay to save resources
+            pros::delay(20);
+        }
+    });
 
 	autonomous();
 	// pros::ADIAnalogIn sensor (ANALOG_SENSOR_PORT);
@@ -112,23 +154,31 @@ void autonomous() {
 
 	pros::lcd::set_text(5, "Entering autonomous");
 
-	pros::MotorGroup left_mg({1, 2, -8});   
-	pros::MotorGroup right_mg({-4, -5, 7});
+	// chassis.setPose(0, 0, 0);
+    // chassis.turnToHeading(90, 100000);
 
-	// right_mg.move(50000);
-	// left_mg.move(50000);
-	// pros::delay(2000);
+	// chassis.moveToPoint(0, 48, 10000);
 
-	// right_mg.move(5000);
-	// pros::delay(2000);
-	// right_mg.move(5000);
-	// left_mg.move(5000);
-
-	for(int i=0;i<7;i++){
-		move_forward(5000, 100);
-		pros::delay(20);
-	}
-
+	move_forward(80, 400);
+	turn_robot(3);
+	move_forward(30, 200);
+	grab_stake();
+	// pros::delay(5);
+	// turn_robot(60);
+	// pros::delay(5);
+	// grab_stake();
+	// pros::delay(10);
+	// turn_robot(107);
+	// pros::delay(10);
+	// move_forward(1000, 200);
+	// //score
+	// turn_robot(100);
+	// pros::delay(5);
+	// move_forward(800, 200);
+	// turn_robot(60);
+	// grab_stake();
+	// turn_robot(10);
+	// move_forward(1500,200);
 
 }
 
@@ -146,17 +196,30 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 void opcontrol() {
+	
 	while (true) {
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
 		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
-		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);  // Prints status of the emulated screen LCDs
+		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0); 
 
-		// Arcade control scheme
+		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
+			left_mg.move(500);
+			right_mg.move(500);
+		}else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
+			left_mg.move(-500);
+			right_mg.move(-500);
+		}
+
 		int dir = master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
 		int turn = master.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		pros::lcd::set_text(3, "Turn: " + std::to_string(turn) + " Dir: " + std::to_string(dir));
 		left_mg.move(dir - turn);                      // Sets left motor voltage
 		right_mg.move(dir + turn);                     // Sets right motor voltage
 		pros::delay(20);                               // Run for 20 ms then update
+
+		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_X)){
+			grab_stake();
+		}
 	}
+
 }
