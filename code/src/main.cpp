@@ -15,6 +15,7 @@ pros::MotorGroup right_mg({-4, -5, 7}, pros::MotorGearset::blue);  // Creates a 
 pros::Motor intake(16, pros::MotorGearset::blue);    
 bool grab = false;
 pros::ADIDigitalOut grabber_motor('A', grab);
+pros::IMU imu(10);
 
 lemlib::Drivetrain drivetrain(&left_mg,
                               &right_mg,
@@ -28,7 +29,7 @@ lemlib::OdomSensors sensors(nullptr, // vertical tracking wheel 1, set to null
                             nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
                             nullptr, // horizontal tracking wheel 1
                             nullptr, // horizontal tracking wheel 2, set to nullptr as we don't have a second one
-                            nullptr // inertial sensor
+                            &imu // inertial sensor
 );
 
 // lateral PID controller
@@ -155,16 +156,28 @@ void autonomous() {
 
 	pros::lcd::set_text(5, "Entering autonomous");
 
-	// chassis.setPose(0, 0, 0);
-    // chassis.turnToHeading(90, 100000);
+	chassis.setPose(80, 0, 0);
+	pros::delay(450);
+    chassis.turnToHeading(90, 100000);
+	pros::delay(450);
 
-	// chassis.moveToPoint(0, 48, 10000);
+
+	chassis.moveToPose(4.45, -50, 270, 10000);
+	pros::delay(450);
+	grab_stake();
+	chassis.moveToPose(19,-47.5, 270, 10000);
+	pros::delay(450);
+	chassis.moveToPose(23, -30, 180, 10000);
+	pros::delay(450);
+	chassis.moveToPoint(17, -35, 10000);
+
 
 	move_forward(80, 400);
 	turn_robot(-3);
 	move_forward(30, 400);
 	grab_stake();
 	turn_robot(3);
+	
 	// grab_stake();
 	// pros::delay(10);
 	// turn_robot(107);
@@ -214,7 +227,9 @@ void opcontrol() {
 		pros::lcd::set_text(3, "Turn: " + std::to_string(turn) + " Dir: " + std::to_string(dir));
 		left_mg.move(dir - turn);                      // Sets left motor voltage
 		right_mg.move(dir + turn);                     // Sets right motor voltage
-		pros::delay(20);                               // Run for 20 ms then update
+		pros::delay(20);
+		// intake.move_velocity(100);
+		// pros::delay(20);                               // Run for 20 ms then update
 
 		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_X)){
 			grab_stake();
