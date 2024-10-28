@@ -10,17 +10,19 @@
 #include "lemlib/pose.hpp"
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
-pros::MotorGroup left_mg({1, 2, -8}, pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
-pros::MotorGroup right_mg({-4, -5, 7}, pros::MotorGearset::blue);  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+pros::MotorGroup left_mg({10, 18, -9}, pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+pros::MotorGroup right_mg({-1, -12, 6}, pros::MotorGearset::blue);  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
 pros::Motor intake(16, pros::MotorGearset::blue);    
 bool grab = false;
+bool ext = false;
 pros::ADIDigitalOut grabber_motor('A', grab);
-pros::IMU imu(10);
+pros::ADIDigitalOut stick('B', ext);
+pros::IMU imu(15);
 
 lemlib::Drivetrain drivetrain(&left_mg,
                               &right_mg,
                               10,
-                              lemlib::Omniwheel::NEW_4, // using new 4" omnis
+                              lemlib::Omniwheel::NEW_275, // using new 4" omnis
                               360, // drivetrain rpm is 360
                               2 // horizontal drift is 2 (for now)
 );
@@ -79,7 +81,13 @@ void turn_robot(int angle) {
 void grab_stake() {
 	grab = !grab;
 	grabber_motor.set_value(grab);
-	pros::delay(40);
+	pros::delay(200);
+}
+
+void stick_change() {
+	ext = !ext;
+	stick.set_value(ext);
+	pros::delay(200);
 }
 
 void on_center_button() {
@@ -157,26 +165,33 @@ void autonomous() {
 	pros::lcd::set_text(5, "Entering autonomous");
 
 	chassis.setPose(80, 0, 0);
+	pros::lcd::set_text(6, "set pose");
 	pros::delay(450);
+	chassis.moveToPoint(100, 0, 100000);
+	pros::lcd::set_text(6, "test");
     chassis.turnToHeading(90, 100000);
+	pros::lcd::set_text(6, "turn to heading");
 	pros::delay(450);
 
 
 	chassis.moveToPose(4.45, -50, 270, 10000);
+	pros::lcd::set_text(6, "move");
 	pros::delay(450);
 	grab_stake();
 	chassis.moveToPose(19,-47.5, 270, 10000);
+	pros::lcd::set_text(6, "move");
 	pros::delay(450);
 	chassis.moveToPose(23, -30, 180, 10000);
+	pros::lcd::set_text(6, "move");
 	pros::delay(450);
 	chassis.moveToPoint(17, -35, 10000);
 
 
-	move_forward(80, 400);
-	turn_robot(-3);
-	move_forward(30, 400);
-	grab_stake();
-	turn_robot(3);
+	// move_forward(80, 400);
+	// turn_robot(-3);
+	// move_forward(30, 400);
+	// grab_stake();
+	// turn_robot(3);
 	
 	// grab_stake();
 	// pros::delay(10);
@@ -222,6 +237,12 @@ void opcontrol() {
 			right_mg.move(-500);
 		}
 
+		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
+			intake.move(127);
+		}else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
+			intake.move(-127);
+		}
+
 		int dir = master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
 		int turn = master.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		pros::lcd::set_text(3, "Turn: " + std::to_string(turn) + " Dir: " + std::to_string(dir));
@@ -234,6 +255,10 @@ void opcontrol() {
 		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_X)){
 			grab_stake();
 		}
-	}
+
+		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_Y)){
+			stick_change();
+		}
+	}	
 
 }
