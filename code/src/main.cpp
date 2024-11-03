@@ -10,14 +10,16 @@
 #include "lemlib/pose.hpp"
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
-pros::MotorGroup left_mg({10, 18, -9}, pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
-pros::MotorGroup right_mg({-1, -12, 6}, pros::MotorGearset::blue);  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
-pros::Motor intake(16, pros::MotorGearset::blue);    
+pros::MotorGroup left_mg({8, 18, -13}, pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+pros::MotorGroup right_mg({-9, -14, 16}, pros::MotorGearset::blue);  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+pros::Motor intake(20, pros::MotorGearset::green);
+pros::Motor conveyor(2, pros::MotorGearset::green);
 bool grab = false;
 bool ext = false;
-pros::ADIDigitalOut grabber_motor('A', grab);
-pros::ADIDigitalOut stick('B', ext);
-pros::IMU imu(15);
+pros::ADIDigitalOut grabber_motor('G', grab);
+pros::ADIDigitalOut stick('H', ext);
+pros::IMU imu(19);
+
 
 lemlib::Drivetrain drivetrain(&left_mg,
                               &right_mg,
@@ -90,6 +92,12 @@ void stick_change() {
 	pros::delay(200);
 }
 
+void score(){
+	intake.move(127);
+	pros::delay(2000);
+	intake.move(0);
+}
+
 void on_center_button() {
 	static bool pressed = false;
 	pressed = !pressed;
@@ -123,7 +131,12 @@ void initialize() {
         }
     });
 
-	autonomous();
+	// imu.reset();
+	// pros::delay(3000);
+	// imu.set_heading(0);
+
+	// autonomous();
+	autonomous3();
 	// pros::ADIAnalogIn sensor (ANALOG_SENSOR_PORT);
   	// sensor.calibrate();
 
@@ -160,53 +173,76 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
-	int MOTOR_MAX_SPEED = 100;
+	int MOTOR_MAX_SPEED = 127;
 
 	pros::lcd::set_text(5, "Entering autonomous");
 
-	chassis.setPose(80, 0, 0);
-	pros::lcd::set_text(6, "set pose");
-	pros::delay(450);
-	chassis.moveToPoint(100, 0, 100000);
-	pros::lcd::set_text(6, "test");
-    chassis.turnToHeading(90, 100000);
-	pros::lcd::set_text(6, "turn to heading");
-	pros::delay(450);
+    // chassis.setPose(0, 0, 0);
+    // turn to face heading 90 with a very long timeout
+    // chassis.turnToHeading(90, 100000);
+
+	move_forward(10,127);
+	pros::lcd::set_text(6,"move");
+	grab_stake();
+	// pros::delay(100);
+	// turn_robot(-4);
+	// move_forward(80,127);
+	// grab_stake();
+	// turn_robot(6);
+	// move_forward(150,127);
+
+	// chassis.setPose(47, -65, 0);
+	// pros::lcd::set_text(6, "set pose");
+	// pros::delay(450);
+
+    // chassis.turnToHeading(-90, 1000);
+	// pros::lcd::set_text(6, "turn to heading");
+	// pros::delay(450);
 
 
-	chassis.moveToPose(4.45, -50, 270, 10000);
-	pros::lcd::set_text(6, "move");
+	// chassis.moveToPoint(13, -65, 100000);
+	// pros::lcd::set_text(6, "move1");
+	// pros::delay(450); 
+
+	// grab_stake();
+	// chassis.moveToPose(19,-47.5, 270, 1000);
+	// pros::lcd::set_text(6, "move2");
+	// pros::delay(450);
+	// chassis.moveToPose(23, -30, 180, 1000);
+	// pros::lcd::set_text(6, "move3");
+	// pros::delay(450);
+	// chassis.moveToPoint(17, -35, 1000);
+	// pros::lcd::set_text(6, "move4");
+}
+
+void autonomous2(){
+	pros::lcd::set_text(6, "2nd autonomous");
+	chassis.setPose(65,23,90);
+	pros::delay(450);
+
+	chassis.moveToPose(32,23,270,10000);
 	pros::delay(450);
 	grab_stake();
-	chassis.moveToPose(19,-47.5, 270, 10000);
-	pros::lcd::set_text(6, "move");
-	pros::delay(450);
-	chassis.moveToPose(23, -30, 180, 10000);
-	pros::lcd::set_text(6, "move");
-	pros::delay(450);
-	chassis.moveToPoint(17, -35, 10000);
 
+	chassis.moveToPose(8,40,125,10000);
+	chassis.moveToPose(8,50,125,10000);
 
-	// move_forward(80, 400);
-	// turn_robot(-3);
-	// move_forward(30, 400);
-	// grab_stake();
-	// turn_robot(3);
-	
-	// grab_stake();
-	// pros::delay(10);
-	// turn_robot(107);
-	// pros::delay(10);
-	// move_forward(1000, 200);
-	// //score
-	// turn_robot(100);
-	// pros::delay(5);
-	// move_forward(800, 200);
-	// turn_robot(60);
-	// grab_stake();
-	// turn_robot(10);
-	// move_forward(1500,200);
+}
 
+void autonomous3(){
+	move_forward(10,127);
+	pros::lcd::set_text(6,"move");
+	grab_stake();
+	pros::delay(100);
+	turn_robot(-4);
+	move_forward(80,127);
+	grab_stake();
+	turn_robot(6);
+	move_forward(150,127);
+	grab_stake();
+	pros::delay(100);
+	turn_robot(1);
+	move_forward(30,127);
 }
 
 /**
@@ -232,22 +268,39 @@ void opcontrol() {
 		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
 			left_mg.move(500);
 			right_mg.move(500);
+			pros::delay(20);
+			left_mg.move(0);
+			right_mg.move(0);
 		}else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
 			left_mg.move(-500);
 			right_mg.move(-500);
+			pros::delay(20);
+			left_mg.move(0);
+			right_mg.move(0);
 		}
 
 		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
-			intake.move(127);
+			intake.move(200);
+			pros::delay(20);
+			conveyor.move(500);
+			pros::delay(20);
 		}else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
-			intake.move(-127);
+			intake.move(-200);
+			pros::delay(20);
+			conveyor.move(-500);
+			pros::delay(20);
 		}
 
-		int dir = master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
+		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_A)){
+			intake.move(0);
+			conveyor.move(0);
+		}
+
+		int dir = -(master.get_analog(ANALOG_LEFT_Y));    // Gets amount forward/backward from left joystick
 		int turn = master.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		pros::lcd::set_text(3, "Turn: " + std::to_string(turn) + " Dir: " + std::to_string(dir));
-		left_mg.move(dir - turn);                      // Sets left motor voltage
-		right_mg.move(dir + turn);                     // Sets right motor voltage
+		left_mg.move((dir) - turn);                      // Sets left motor voltage
+		right_mg.move((dir) + turn);                     // Sets right motor voltage
 		pros::delay(20);
 		// intake.move_velocity(100);
 		// pros::delay(20);                               // Run for 20 ms then update
