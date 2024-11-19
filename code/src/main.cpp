@@ -9,6 +9,8 @@
 #include "lemlib/chassis/trackingWheel.hpp"
 #include "lemlib/pose.hpp"
 
+// void autonomous3();
+
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 pros::MotorGroup left_mg({8, 18, -13}, pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
 pros::MotorGroup right_mg({-9, -14, 16}, pros::MotorGearset::blue);  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
@@ -16,6 +18,7 @@ pros::Motor intake(20, pros::MotorGearset::green);
 pros::Motor conveyor(2, pros::MotorGearset::green);
 bool grab = false;
 bool ext = false;
+bool intaking = false;
 pros::ADIDigitalOut grabber_motor('G', grab);
 pros::ADIDigitalOut stick('H', ext);
 pros::IMU imu(19);
@@ -98,6 +101,12 @@ void score(){
 	intake.move(0);
 }
 
+void toggle_intake(){
+	intaking = !intaking;
+	intake.move(200*intaking);
+	conveyor.move(500*intaking);
+}
+
 void on_center_button() {
 	static bool pressed = false;
 	pressed = !pressed;
@@ -136,7 +145,7 @@ void initialize() {
 	// imu.set_heading(0);
 
 	// autonomous();
-	autonomous3();
+	autonomous();
 	// pros::ADIAnalogIn sensor (ANALOG_SENSOR_PORT);
   	// sensor.calibrate();
 
@@ -181,7 +190,7 @@ void autonomous() {
     // turn to face heading 90 with a very long timeout
     // chassis.turnToHeading(90, 100000);
 
-	move_forward(10,127);
+	// move_forward(10,127);
 	pros::lcd::set_text(6,"move");
 	grab_stake();
 	// pros::delay(100);
@@ -243,6 +252,41 @@ void autonomous3(){
 	pros::delay(100);
 	turn_robot(1);
 	move_forward(30,127);
+}
+
+void autonomous4() {  // autonomous skills 2 from teams chat
+	pros::lcd::set_text(6, "skills auton 2");
+	chassis.setPose(-59, 0, 270);
+	pros::delay(500);
+
+	chassis.moveToPose(-47, 0, 270, 10000);
+	chassis.turnToHeading(0, 10000);
+	pros::delay(250);
+	chassis.moveToPose(-47, -17, 0, 10000);  // moving into position to grab stake
+	grab_stake();
+
+	chassis.moveToPose(-47, -23.5, 90, 10000);  // moving into stake location to align with first ring
+	pros::delay(250);
+	toggle_intake();
+	chassis.moveToPose(-23.5, -23.5, 90, 10000);  // first ring location
+	chassis.turnToHeading(180, 10000);
+	pros::delay(250);
+	chassis.moveToPose(-23.5, -47, 180, 10000);  // second ring location
+	chassis.turnToHeading(270, 10000);
+	pros::delay(250);
+	chassis.moveToPose(-47, -47, 270, 10000);  // third ring location
+	chassis.moveToPose(-59, -47, 270, 10000);  // fourth ring location
+	pros::delay(250);
+	chassis.moveToPose(-47, -47, 270, 10000);  // moving back to align with fifth ring
+	chassis.turnToHeading(180, 10000);
+	pros::delay(250);
+	chassis.moveToPose(-47, -59, 180, 10000);  // fifth ring location
+	chassis.turnToHeading(252, 10000);
+	pros::delay(250);
+	chassis.moveToPose(-65, -65, 252, 10000);  // moving into bottom left corner
+	toggle_intake();
+	grab_stake();  // letting go of stake
+	
 }
 
 /**
