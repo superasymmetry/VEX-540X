@@ -254,7 +254,7 @@ void autonomous3(){
 	move_forward(30,127);
 }
 
-void autonomous4() {  // autonomous skills 2 from teams chat
+void autonomous4() {  // autonomous skills 3 from teams chat
 	pros::lcd::set_text(6, "skills auton 2");
 	chassis.setPose(-59, 0, 270);
 	pros::delay(500);
