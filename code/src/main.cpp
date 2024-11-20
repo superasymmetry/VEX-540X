@@ -4,6 +4,7 @@
 #include "lemlib/api.hpp"
 #include "lemlib/chassis/chassis.hpp"
 #include "lemlib/pose.hpp"
+#include "liblvgl/llemu.hpp"
 #include "pros/motors.hpp"
 #include "pros/imu.hpp"
 #include "lemlib/chassis/trackingWheel.hpp"
@@ -181,18 +182,48 @@ void competition_initialize() {}
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-void autonomous() {
-	int MOTOR_MAX_SPEED = 127;
+void autonomous() {  // in-game autonomous
+	pros::lcd::set_text(6, "autonmous");
+	chassis.setPose(60, 23.5, 90);
+	pros::delay(500);
 
-	pros::lcd::set_text(5, "Entering autonomous");
+	chassis.moveToPose(30, 23.5, 90, 10000);  // move into position to grab the first stake
+	grab_stake();
+	pros::delay(250);
+	chassis.moveToPose(23.5, 23.5, 90, 10000);  // move into the stake's position
+	chassis.turnToHeading(302, 10000);
+	pros::delay(250);
+	chassis.moveToPose(3.5, 36, 302, 10000);
+	toggle_intake();
+	chassis.turnToHeading(0, 10000);
+	pros::delay(250);
+	chassis.moveToPose(3.5, 50.5, 0, 10000);
+	chassis.turnToHeading(100, 10000);
+	pros::delay(250);
+	chassis.moveToPose(23.5, 47, 100, 10000);
+	chassis.turnToHeading(90, 10000);
+	pros::delay(250);
+	chassis.moveToPose(47, 47, 90, 10000);
+	chassis.turnToHeading(0, 10000);
+	pros::delay(250);
+	chassis.moveToPose(47, 0, 0, 10000);
+	chassis.moveToPose(47, -47, 0, 10000);
+	grab_stake();
+	chassis.turnToHeading(338, 10000);
+	chassis.moveToPose(27.5, 0, 338, 10000);
+
+
+	// int MOTOR_MAX_SPEED = 127;
+
+	// pros::lcd::set_text(5, "Entering autonomous");
 
     // chassis.setPose(0, 0, 0);
     // turn to face heading 90 with a very long timeout
     // chassis.turnToHeading(90, 100000);
 
 	// move_forward(10,127);
-	pros::lcd::set_text(6,"move");
-	grab_stake();
+	// pros::lcd::set_text(6,"move");
+	// grab_stake();
 	// pros::delay(100);
 	// turn_robot(-4);
 	// move_forward(80,127);
